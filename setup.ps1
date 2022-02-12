@@ -3,10 +3,6 @@ Start-Transcript
 Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile "./dotnet-install.ps1"
 ./dotnet-install.ps1 -Channel 2.0 -InstallDir c:\dotnet
 
-# Install Post-Git
-#Write-host "Installing Posh-Git"
-#Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -force
-
 # Install chocolately to be able to install git
 Invoke-WebRequest 'https://chocolatey.org/install.ps1' -OutFile "./choco-install.ps1"
 ./choco-install.ps1
@@ -14,10 +10,14 @@ Invoke-WebRequest 'https://chocolatey.org/install.ps1' -OutFile "./choco-install
 # Install Git with choco
 choco install git -y
 choco install openssh -y -f
+
+# Install ssh for admin puproses
 cd "C:\Program Files\OpenSSH-Win64"
 ./install-sshd.ps1
 Set-service sshd -StartupType Automatic
 Start-Service sshd
+
+#Install sql server
 gsutil cp gs://router-image-vmdk/SQLServer2016SP2-FullSlipstream-x64-ENU.iso C:\Users\aman_wolde\Downloads\
 Mount-DiskImage -ImagePath C:\Users\aman_wolde\Downloads\SQLServer2016SP2-FullSlipstream-x64-ENU.iso  -StorageType ISO -PassThru
 d:
@@ -30,7 +30,9 @@ SQLSVCACCOUNT="NT Service\MSSQLSERVER"
 SQLSYSADMINACCOUNTS="aman_wolde"
 IAcceptSQLServerLicenseTerms="True"' > c:\install.ini
 .\setup.exe /QS  /ConfigurationFile=c:\install.ini
-.\setup.exe /Action=RunDiscovery /q #verify
+
+#verify installation
+.\setup.exe /Action=RunDiscovery /q
 Set-Service SQLSERVERAGENT -StartupType Automatic
 Start-Service SQLSERVERAGENT
 
@@ -41,8 +43,9 @@ Install-Module -Name SqlServer -force
 gsutil cp gs://router-image-vmdk/yourdb.bak "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Backup\yourdb.bak"
 
 # restore db
-Restore-SqlDatabase -ServerInstance localhost -BackupFile .\yourdb.bak -Database YourDB
-
+Restore-SqlDatabase -ServerInstance localhost -BackupFile yourdb.bak -Database YourDB
+Get-SqlDatabase -ServerInstance localhost
+Invoke-Sqlcmd -ServerInstance localhost -Database YourDB -Query "select * from invokeTable"
 Restart-Computer
 
 
