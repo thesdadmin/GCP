@@ -17,3 +17,15 @@ db_user          = "aman_w"
 db_user_pass     = "rH}w9KWc31s+"
 bucket           = "your-bucket-name"
 ```
+
+### Concourse CI
+You can run this pipeline in Concourse CI by using the following command:
+```
+docker-compose up -d
+fly -t tutorial set-pipeline -p sql -c job.yml -n  &&  \
+  fly -t tutorial trigger-job --job sql/restore-job --watch
+```
+You will need to set `((gcp.*))` instances in `job.yml` file to actual values you want to use in Terraform.
+
+Follow the guide on [vault credential manager](https://concourse-ci.org/vault-credential-manager.html)
+section `Configuring the secrets engine` to set up your own Vault instance.
