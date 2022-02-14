@@ -42,7 +42,12 @@ resource "google_compute_instance" "sql_server" {
 
   metadata = {
     enable-oslogin             = "True"
-    windows-startup-script-cmd = "winrm quickconfig -quiet & net user /add ${var.db_user} ${var.db_user_pass} & net localgroup administrators ${var.db_user} /add & winrm set winrm/config/service/auth @{Basic=\"true\"} & curl -H \"Metadata-Flavor: Google\" \"http://metadata.google.internal/computeMetadata/v1/instance/attributes/another-script\" > c:/startup.ps1 & pwsh c:/startup.ps1"
+    windows-startup-script-ps1 = <<EOT
+    $Password = ConvertTo-SecureString "${var.db_user_pass}" -AsPlainText -Force
+    New-LocalUser "${var.db_user}" -Password $Password -Desciption "SQL Admin"
+    Add-LocalGroupMember -Group Administrators "${var.db_user}"
+    Invoke-WebRequest -H \"Metadata-Flavor: Google\" \"http://metadata.google.internal/computeMetadata/v1/instance/attributes/another-script\"
+    EOT
     //    windows-startup-script-ps1 = data.template_file.windows_startup.rendered
     another-script = data.template_file.windows_startup.rendered
   }

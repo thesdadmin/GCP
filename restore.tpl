@@ -35,6 +35,9 @@ if (!(Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -ErrorAction SilentlyCon
     Write-Output "Firewall rule 'OpenSSH-Server-In-TCP' has been created and exists."
 }
 
+#Create local user for SQL 
+ADD
+
 #Install sql server
 mkdir c:\tmp\
 gsutil cp gs://${backup_bucket}/SQLServer2016SP2-FullSlipstream-x64-ENU.iso C:\tmp\
