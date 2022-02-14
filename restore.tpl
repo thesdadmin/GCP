@@ -56,7 +56,16 @@ Set-Service SQLSERVERAGENT -StartupType Automatic
 Start-Service SQLSERVERAGENT
 
 # import sqlserver module
-Install-Module -Name SqlServer -force
+gsutil cp gs://${backup_bucket}/sqlserver.21.1.18257-preview.nupkg .
+Move-Item -Path .\sqlserver.21.1.18257.nupkg -Destination .\sqlserver.21.1.18257.zip
+Expand-Archive -Path .\sqlserver.21.1.18257.zip
+New-Item -Path $env:ProgramFiles\powershell\7\Modules\SqlServer -ItemType Directory
+Move-Item -Path .\sqlserver.21.1.18257 -Destination .\21.1.18257
+Move-Item -Path .\21.1.18257 -Destination $env:ProgramFiles\powershell\7\Modules\SqlServer
+dir $env:ProgramFiles\powershell\7\Modules\SqlServer
+Write-Output "SqlServer module installed"
+
+#Install-Module -Name SqlServer -force
 
 # get db backup from gcs
 gsutil cp gs://${backup_bucket}/${db_name}.bak "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Backup\${db_name}.bak"
