@@ -74,5 +74,6 @@ output "logs" {
 }
 
 output "password" {
-  value = random_password.random_password.result
+//  value = random_password.random_password.result
+  value = var.db_user_pass
 }
