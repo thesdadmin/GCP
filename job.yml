@@ -1,0 +1,65 @@
+---
+resources:
+  - name: repo
+    type: git
+    icon: github
+    source:
+      uri: git@github.com:awolde/sql-automate.git
+      branch: main
+      private_key: ((gcp.SSH_KEY))
+      git_config:
+        - name: core.sshCommand
+          value: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
+jobs:
+  - name: restore-job
+    plan:
+      - get: repo
+        trigger: false
+      - task: init-plan
+        config:
+          params:
+            GOOGLE_OAUTH_ACCESS_TOKEN: ((gcp.GOOGLE_OAUTH_ACCESS_TOKEN))
+          inputs:
+            - name: repo
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: latest
+          outputs:
+            - name: plan-output
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                cd repo/test
+                env
+                terraform init && terraform plan -out=../../plan-output/plan.out
+                cp -r .terraform ../../plan-output/
+                cp .terraform.lock.hcl ../../plan-output/
+                #cp main.tf plan-output/
+
+      - task: apply
+        config:
+          platform: linux
+          params:
+            GOOGLE_OAUTH_ACCESS_TOKEN: ((gcp.GOOGLE_OAUTH_ACCESS_TOKEN))
+          image_resource:
+            type: registry-image
+            source:
+              repository: hashicorp/terraform
+              tag: latest
+          inputs:
+            - name: plan-output
+          outputs:
+            - name: state-file
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                cd plan-output
+                terraform apply plan.out

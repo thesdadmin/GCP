@@ -47,8 +47,8 @@ INSTANCENAME="MSSQLSERVER"
 INSTANCEID="MSSQLSERVER"
 SQLSVCACCOUNT="NT Service\MSSQLSERVER"
 SQLSYSADMINACCOUNTS="${db_user}"
-IAcceptSQLServerLicenseTerms="True"' > c:\install.ini
-.\setup.exe /Q /ConfigurationFile=c:\install.ini
+IAcceptSQLServerLicenseTerms="True"' > c:\tmp\install.ini
+.\setup.exe /Q /ConfigurationFile=c:\tmp\install.ini
 
 #verify installation
 .\setup.exe /Action=RunDiscovery /q
@@ -56,7 +56,8 @@ Set-Service SQLSERVERAGENT -StartupType Automatic
 Start-Service SQLSERVERAGENT
 
 # import sqlserver module
-gsutil cp gs://${backup_bucket}/sqlserver.21.1.18257-preview.nupkg .
+cd c:\tmp
+gsutil cp gs://${backup_bucket}/sqlserver.21.1.18257.nupkg .
 Move-Item -Path .\sqlserver.21.1.18257.nupkg -Destination .\sqlserver.21.1.18257.zip
 Expand-Archive -Path .\sqlserver.21.1.18257.zip
 New-Item -Path $env:ProgramFiles\powershell\7\Modules\SqlServer -ItemType Directory
@@ -71,6 +72,15 @@ Write-Output "SqlServer module installed"
 gsutil cp gs://${backup_bucket}/${db_name}.bak "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Backup\${db_name}.bak"
 
 # restore db
-Restore-SqlDatabase -ServerInstance localhost -BackupFile ${db_name}.bak -Database ${db_name}
-Get-SqlDatabase -ServerInstance localhost > c:\db_list.txt
-Invoke-Sqlcmd -ServerInstance localhost -Database ${db_name} -Query "select * from invokeTable" > c:\invokeTable.txt
+$user='${db_user}'
+$pass='${db_pass}'
+try {
+    Invoke-Command -ScriptBlock   {
+            Restore-SqlDatabase -ServerInstance localhost -BackupFile ${db_name}.bak -Database ${db_name}
+            Get-SqlDatabase -ServerInstance localhost > c:\tmp\db_list.txt
+        }
+    -ComputerName localhost -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force))
+    } catch { echo $_.Exception.Message }
+
+#Get-SqlDatabase -ServerInstance localhost > c:\tmp\db_list.txt
+#Invoke-Sqlcmd -ServerInstance localhost -Database ${db_name} -Query "select * from invokeTable" > c:\tmp\invokeTable.txt

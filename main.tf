@@ -4,6 +4,7 @@ data "template_file" "windows_startup" {
     db_name       = var.db_name
     backup_bucket = var.bucket
     db_user       = var.db_user
+    db_pass       = var.db_user_pass
   }
 }
 
