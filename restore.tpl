@@ -75,7 +75,7 @@ gsutil cp gs://${backup_bucket}/${db_name}.bak "C:\Program Files\Microsoft SQL S
 $user='${db_user}'
 $pass='${db_pass}'
 try {
-    Invoke-Command -ScriptBlock   {
+    Invoke-Command -ScriptBlock {
             Restore-SqlDatabase -ServerInstance localhost -BackupFile ${db_name}.bak -Database ${db_name}
             Get-SqlDatabase -ServerInstance localhost > c:\tmp\db_list.txt
         }

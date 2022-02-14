@@ -15,11 +15,19 @@ jobs:
   - name: restore-job
     plan:
       - get: repo
-        trigger: false
+        trigger: true
       - task: init-plan
         config:
           params:
             GOOGLE_OAUTH_ACCESS_TOKEN: ((gcp.GOOGLE_OAUTH_ACCESS_TOKEN))
+            BUCKET: ((gcp.BUCKET))
+            PREFIX: ((gcp.PREFIX))
+            TF_VAR_project: ((gcp.PROJECT))
+            TF_VAR_vpc_project: ((gcp.PROJECT))
+            TF_VAR_db_user: ((gcp.DB_USER))
+            TF_VAR_db_user_pass: ((gcp.DB_PASSWORD))
+            TF_VAR_bucket: ((gcp.BUCKET))
+            ENV: test
           inputs:
             - name: repo
           platform: linux
@@ -35,11 +43,11 @@ jobs:
             args:
               - -exc
               - |
-                cd repo/test
-                env
-                terraform init && terraform plan -out=../../plan-output/plan.out
-                cp -r .terraform ../../plan-output/
-                cp .terraform.lock.hcl ../../plan-output/
+                cd repo/
+                cp ${ENV}.tfvars terraform.tfvars
+                terraform init -backend-config="bucket=${BUCKET}" -backend-config="prefix=${PREFIX}/${ENV}" && terraform plan -out=../plan-output/plan.out
+                cp -r .terraform ../plan-output/
+                cp .terraform.lock.hcl ../plan-output/
                 #cp main.tf plan-output/
 
       - task: apply
