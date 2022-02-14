@@ -29,7 +29,7 @@ INSTANCEID="MSSQLSERVER"
 SQLSVCACCOUNT="NT Service\MSSQLSERVER"
 SQLSYSADMINACCOUNTS="aman_wolde"
 IAcceptSQLServerLicenseTerms="True"' > c:\install.ini
-.\setup.exe /QS  /ConfigurationFile=c:\install.ini
+.\setup.exe /Q /ConfigurationFile=c:\install.ini
 
 #verify installation
 .\setup.exe /Action=RunDiscovery /q
@@ -56,3 +56,6 @@ Invoke-Sqlcmd -ServerInstance localhost -Query "USE master; ALTER DATABASE YourD
 Restore-SqlDatabase -ServerInstance localhost -BackupFile .\yourdb.bak -Database YourDB
 Get-SqlDatabase -ServerInstance localhost
 Invoke-Sqlcmd -ServerInstance localhost -Database YourDB -Query "select * from invokeTable"
+
+Invoke-RestMethod -Headers @{'Metadata-Flavor' = 'Google'} -Uri "http://metadata.google.internal/computeMetadata/v1/instance/attributes/windows-startup-script-ps1"
+PS C:\Program Files\Google\Compute Engine\metadata_scripts> .\run_startup_scripts.cmd
