@@ -78,8 +78,7 @@ try {
     Invoke-Command -ScriptBlock {
             Restore-SqlDatabase -ServerInstance localhost -BackupFile ${db_name}.bak -Database ${db_name}
             Get-SqlDatabase -ServerInstance localhost > c:\tmp\db_list.txt
-        }
-    -ComputerName localhost -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force))
+        } -ComputerName localhost -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force))
     } catch { echo $_.Exception.Message }
 
 #Get-SqlDatabase -ServerInstance localhost > c:\tmp\db_list.txt
