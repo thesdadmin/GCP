@@ -1,0 +1,87 @@
+id: win-policy
+mode: ENFORCEMENT
+resourceGroups:
+  - resources:
+      - id: install-maint-plan
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              if f ((Get-DbaAgentJob -SqlInstance lab-sql -Job "DatabaseBaCkup - USER_DATABASES - LOG").JobID -ne $null) {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |    
+              $userdb = Get-DbaDatabase -SQLInstance $env:ComputerName -ExcludeSystem
+              $systemdb = Get-DbaDatabase -SQLInstance $env:ComputerName -ExcludeUser
+              $params = @{
+              SqlInstance = $envComputerName
+              Database = $userdb
+              ReplaceExisting = $true
+              InstallJobs = $true
+              LogToTable = $true
+              BackupLocation = 'E:\Data\Backup'  
+              CleanupTime = 176
+              Verbose = $true
+              }
+              
+              Install-DBAMaintenanceSolution @params
+              exit 100
+      - id: config-gcs-backup
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: | 
+              if ((Get-DbaAgentJob -sqlinstance $env:computername -job $systemdbjob).HasSchedule -eq $true) {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL  
+            script: |
+              $userdbjob = 'DatabaseBackup - USER_DATABASES - FULL'
+              $userlogjob = 'DatabaseBackup - USER_DATABASES - LOG'
+              $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+              
+              New-DbaAgentSchedule -SQLInstance $env:Computername `
+              -Schedule UserDBLog `
+              -FrequencyType Daily `
+              -FrequencyInterval 1 `
+              -FrequencySubDayType Minute `
+              -FrequencySubDayInterval 5 `
+              -Force 
+
+              New-DbaAgentSchedule -SQLInstance $env:Computername `
+              -Schedule UserDBBK `
+              -FrequencyType Daily `
+              -Starttime "050000" `
+              -Force
+
+              New-DbaAgentSchedule -SQLInstance $env:Computername `
+              -Schedule SysDBBK `
+              -FrequencyType Daily `
+              -Starttime "050000" `
+              -Force
+
+              Set-DbaAgentSchedule -SQLInstance $env:Computername -job $userdbjob -Schedule UserDBBK
+              Set-DbaAgentSchedule -SQLInstance $env:computername -job $userdblogjob -Schedule UserDBLog
+              Set-DbaAgentSchedule -SQLInstance $env:computername -job $systemdbjob -Schedule SysDBBK
+              exit 100              
+      - id: gcs-upload-configure
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - FULL").count -gt 1) 
+              {exit 100} else {ext 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              $jobs = 'DatabaseBackup - USER_DATABASES - FULL','DatabaseBackup - USER_DATABASES - LOG','DatabaseBackup - SYSTEM_DATABASES - FULL'
+              New-DbaAgentJobStep -SQLInstance $env:computername -StepName "Upload to GCS" `
+              -Subsystem 'CmdExec'
+              -Command @"
+              cd E:\backups
+              gsutil cp -n . gs://lab_iso/
+              "@ `
+              -id 2 `
+              -onsuccesaction quitwithsuccess `
+              -onfailaction quitwithfailure  `
+              -job $jobs
+              exit 100
