@@ -25,7 +25,7 @@ data "google_storage_bucket" "script" {
 }
 
 data "google_compute_subnetwork" "lab03" {
-  project = data.google_project.project.project_id
+  project = data.google_project.project.project_id 
   name   = "subnet-03"
   region = "us-central1"
 }
