@@ -1,7 +1,4 @@
 
-variable "windows_vm_image" {
-  default = ""
-}
 variable "image_project" {
   default = ""
 }
@@ -20,16 +17,15 @@ variable "region" {
 variable "subnet" {
   default = ""
 }
-variable "db_name" {
-  default = ""
-}
+
 variable "bucket" {
   default = ""
 }
-variable "db_user" {
-  default = ""
+
+variable "service_port" {
+  default = "80"
 }
 
-variable "db_user_pass" {
-  default = "-QKUkTgAf8gJ"
-}
+variable "service_name" {
+  default = "web"
+} 

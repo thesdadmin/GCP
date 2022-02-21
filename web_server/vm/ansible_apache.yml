@@ -1,6 +1,6 @@
 ---
 - name: setup webserver
-  hosts: 127.0.0.1
+  hosts: localhost
   connection: local
   become: true
   tasks:
