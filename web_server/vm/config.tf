@@ -21,13 +21,13 @@ data "google_compute_image" "rhel_image" {
 }
 
 data "google_storage_bucket" "script" {
-  name = "lab-359-startup" 
+  name = "lab-359-startup"
 }
 
 data "google_compute_subnetwork" "lab03" {
-  project = data.google_project.project.project_id 
-  name   = "subnet-03"
-  region = "us-central1"
+  project = data.google_project.project.project_id
+  name    = "subnet-03"
+  region  = "us-central1"
 }
 
 

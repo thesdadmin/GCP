@@ -3,7 +3,7 @@ resource "google_project_iam_custom_role" "storage" {
   title       = "Custom Bucket Viewer Role"
   description = "Allows Viewer rights to Buckets"
   project     = data.google_project.project.project_id
-  permissions = ["storage.buckets.get","storage.buckets.list"]
+  permissions = ["storage.buckets.get", "storage.buckets.list"]
 }
 
 resource "google_service_account" "sa" {
@@ -27,6 +27,6 @@ resource "google_project_iam_member" "sa_compute_storage" {
 
 resource "google_project_iam_member" "sa_compute_storage_2" {
   project = data.google_project.project.project_id
-  role    = "${google_project_iam_custom_role.storage.id}"
+  role    = google_project_iam_custom_role.storage.id
   member  = "serviceAccount:${google_service_account.sa.email}"
 }

@@ -8,28 +8,15 @@ variable "image_project" {
 variable "vm_size" {
   default = ""
 }
-variable "project" {
-  default = ""
+
+variable "service_port" {
+  default = "80"
 }
-variable "vpc_project" {
-  default = ""
-}
-variable "region" {
-  default = ""
-}
-variable "subnet" {
-  default = ""
-}
-variable "db_name" {
-  default = ""
-}
-variable "bucket" {
-  default = ""
-}
-variable "db_user" {
+
+variable "app_name" {
   default = ""
 }
 
-variable "db_user_pass" {
-  default = "-QKUkTgAf8gJ"
+variable "app_project" {
+  default = ""
 }
