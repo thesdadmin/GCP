@@ -1,6 +1,6 @@
 # Terraform Code         
 
-This code was written to implement the requested challenge to create a VPC in Google Cloud Platform with 4 subnets, (two public and two private), a private web server, a load-balancer connecting the public internet to the private i
+This code was written to implement the requested challenge to create a VPC in Google Cloud Platform with 4 subnets, (two public and two private), a private web server, a load-balancer connecting the public internet to the private subnet.
 
 ## Compatibility
 
