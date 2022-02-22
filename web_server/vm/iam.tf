@@ -1,3 +1,6 @@
+//The purpose of this code is to create a custom SA account for the Compute instance to run with.
+//This service account will allow acces to Compute and Cloud Storage resources at the project level only. 
+
 resource "google_project_iam_custom_role" "storage" {
   role_id     = "bucket.viewer"
   title       = "Custom Bucket Viewer Role"

@@ -1,11 +1,18 @@
+
+//Module from the Terraform registry. The Module is maintained by Google. 
+// https://registry.terraform.io/modules/terraform-google-modules/network/google/latest
 module "vpc" {
   source  = "terraform-google-modules/network/google"
   version = "~> 4.0"
 
-  project_id   = data.google_project.project.project_id
+  project_id = data.google_project.project.project_id
+
+  //Define a VPC network 
   network_name = "coalfire"
   routing_mode = "GLOBAL"
   mtu          = 1460
+
+  //define VPC subnets. 
   subnets = [
     {
       subnet_name           = "subnet-01"
@@ -45,6 +52,7 @@ module "vpc" {
     }
   ]
 
+  //define VPC Routes
   routes = [
     {
       name              = "egress-internet"
@@ -55,8 +63,11 @@ module "vpc" {
     }
 
   ]
+
+  //Define VPC Firewall rules
   firewall_rules = [
     {
+      //Allow IAP-Tunnel from the GCP Service to the compute instances for remote management. 
       name                    = "allow-iap"
       description             = "Allow IAP access to VM"
       direction               = "INGRESS"
@@ -75,7 +86,9 @@ module "vpc" {
         metadata = "INCLUDE_ALL_METADATA"
       }
     },
+
     {
+      //Allow inbound webtraffic to reach Network interfaces with the desginated "public" tag
       name                    = "allow-http"
       description             = "All web traffic"
       direction               = "INGRESS"
@@ -98,6 +111,7 @@ module "vpc" {
       }
     },
     {
+      //Allow outbound internet access for TCP traffic. 
       name                    = "outbound-tcp"
       description             = "Allow Egress"
       direction               = "EGRESS"
@@ -117,6 +131,7 @@ module "vpc" {
       }
     },
     {
+      //Allow outbound UDP traffic. 
       name                    = "outbound-udp"
       description             = "Egress UDP"
       priority                = 210

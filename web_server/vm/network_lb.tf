@@ -7,17 +7,19 @@ resource "google_compute_global_forwarding_rule" "global_forwarding_rule" {
   target     = google_compute_target_http_proxy.target_http_proxy.self_link
   port_range = "80"
 }
+
 # used by one or more global forwarding rule to route incoming HTTP requests to a URL map
 resource "google_compute_target_http_proxy" "target_http_proxy" {
   name    = "${var.app_name}-proxy"
   project = var.app_project
   url_map = google_compute_url_map.url_map.self_link
 }
+
 # defines a group of virtual machines that will serve traffic for load balancing
 resource "google_compute_backend_service" "backend_service" {
   name          = "${var.app_name}-backend-service"
   project       = var.app_project
-  port_name     = "http"
+  port_name     = var.service_port_name
   protocol      = "HTTP"
   health_checks = ["${google_compute_health_check.healthcheck.self_link}"]
   backend {

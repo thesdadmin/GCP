@@ -1,16 +1,17 @@
-
+//Upload the ansible script to a GCS bucket
 resource "google_storage_bucket_object" "script" {
   name   = "ansible_apache.yml"
   source = "./ansible_apache.yml"
   bucket = data.google_storage_bucket.script.name
 }
 
-//create random number
+//create random number for naming the VM since GCP vms need unique names. 
 resource "random_integer" "random_number" {
   max = 100
   min = 1
 }
 
+//Creates the actual VM, applies a startup script and ssh key. 
 resource "google_compute_instance" "rhel_web" {
   project      = data.google_project.project.project_id
   name         = "rhel-web-${random_integer.random_number.result}"
@@ -29,7 +30,6 @@ resource "google_compute_instance" "rhel_web" {
 
   network_interface {
     subnetwork = data.google_compute_subnetwork.lab03.self_link
-    //subnetwork = "projects/${data.google_project.project.project_id}/regions/us-central1/subnetworks/${var.subnet}"
   }
 
   metadata = {
@@ -58,6 +58,7 @@ resource "google_compute_instance" "rhel_web" {
   }
 }
 
+//creates and unmanaged instance group and adds the above VM to it. This is critical for the Network LB to work. 
 resource "google_compute_instance_group" "webservers" {
   name        = "rhel-web-group"
   description = "rhel instance group"
