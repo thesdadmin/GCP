@@ -10,7 +10,7 @@ If you find incompatibilities using Terraform `>=0.13`, please open an issue.
 
 ## Usage
 The code is seprated into two folders with unique state files. The ["VPC"](vpc) folder contains the code to create a VPC, Subnets, Firewall Rules, Cloud Router and Cloud NAT. 
-The ["VM"](vm)folder contains the code to create the RHEL webserver, unmanaged instance group, and associated HTTP(S) Load balancer. 
+The ["VM"](vm) folder contains the code to create the RHEL webserver, unmanaged instance group, and associated HTTP(S) Load balancer. 
 
 ![Succssful Curl.](img/website_curl.png "Website Curl")
 
