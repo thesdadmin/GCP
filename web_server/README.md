@@ -15,3 +15,15 @@ The ["VM"](vm)folder contains the code to create the RHEL webserver, unmanaged i
 ![Succssful Curl.](img/website_curl.png "Website Curl")
 
 ![Custom Web page.](img/website_screenshot.png "Website Loaded")
+
+##Sources used 
+
+[Terraform Registry.](https://registry.terraform.io/modules/terraform-google-modules/network/google/latest "Terraform Registry")
+
+[Ansible Config.](https://codingbee.net/ansible/ansible-a-playbook-for-setting-up-an-apache-webserver "Ansible Apache Config")
+
+[Ansible Ref 1.](https://developers.redhat.com/blog/2016/08/15/install-ansible-on-rhel "Ansible Reference 1")
+
+[Ansible Ref 2](https://computingforgeeks.com/how-to-install-and-configure-ansible-on-rhel-8-centos-8/ "Ansible Reference 2")
+
+[GCP HTTP LB.](https://chainerweb.com/terraform-and-gcp/ "GCP HTTP LB")
