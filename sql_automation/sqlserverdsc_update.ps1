@@ -1,18 +1,51 @@
-﻿Configuration SQLInstall
+﻿$User = "sa"
+$pass = "Password1234"
+$MyCredential=New-Object -TypeName System.Management.Automation.PSCredential `
+ -ArgumentList $User, (ConvertTo-SecureString -asplaintext -force $pass)
+ 
+
+
+Configuration SQLInstall
 {
-
-    param(
-    	[Parameter(Mandatory)]
-	[PSCredential]$Password
-    )
-
-    Import-DscResource -ModuleName SqlServerDsc
-    Import-DSCResource -ModuleName PSDesiredStateConfiguration
-     
-     
+  
+  Import-DscResource -ModuleName SqlServerDsc,PSDesiredStateConfiguration,StorageDSC,SQLServer 
+  
     node localhost
     {
-	 WindowsFeature 'NetFramework45'
+        WaitForDisk Disk1
+        {
+             DiskId = 1
+             RetryIntervalSec = 60
+             RetryCount = 60
+        }
+
+        Disk DVolume
+        {
+             DiskId = 1
+             DriveLetter = 'D'
+             Size = 24GB
+             FSLabel = 'Data'
+             DependsOn = '[WaitForDisk]Disk1'
+        }
+
+        WaitForDisk Disk2
+        {
+             DiskId = 2
+             RetryIntervalSec = 60
+             RetryCount = 60
+        }
+
+        Disk EVolume
+        {
+             DiskId = 2
+             DriveLetter = 'E'
+             Size = 24GB
+             FSLabel = 'SQL Backups'
+             DependsOn = '[WaitForDisk]Disk2'
+        }
+
+
+	    WindowsFeature 'NetFramework45'
          {
               Name   = 'NET-Framework-45-Core'
               Ensure = 'Present'
@@ -46,9 +79,10 @@
               SQLBackupDir        = 'E:\SQL_Backups\'
               InstallSQLDataDir   = 'D:\SQL2016\SQLData'
               SQLSysAdminAccounts = @('Administrators')
-              SAPwd	              = $Password
+              SAPwd	              = $MyCredential
 	          SecurityMode        = 'SQL'
               TCPEnabled          = $true
+              AgtSvcStartupType   = 'Automatic'
               DependsOn           = '[WindowsFeature]NetFramework45'       
          }
 
@@ -57,6 +91,7 @@
              ServerName = $Node.NodeName
              InstanceName = 'MSSQLSERVER'
              Name         = 'AdventureWorks2016'
+             RecoveryModel = 'Full'
          }
     }
   

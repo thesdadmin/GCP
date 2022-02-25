@@ -1,87 +1,233 @@
-id: win-policy
+id: win-sql-maint-policy
 mode: ENFORCEMENT
 resourceGroups:
   - resources:
+      - id: initial-backup
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $dbbackups=Get-DbaDbBackupHistory -SqlInstance $env:ComputerName -Database AdventureWorks2016 -Type Full -Since (Get-Date).AddDays(-1)
+              if ($dbbackups.count -gt 2) {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $database=Get-DbaDatabase -SqlInstance $env:ComputerName -Database AdventureWorks2016
+              Backup-DbaDatabase -sqlinstance $env:ComputerName -Database AdventureWorks2016 -Type FULL
+              exit 100
+            outputFilePath: C:\ospolicy_log.txt
       - id: install-maint-plan
         exec:
           validate:
             interpreter: POWERSHELL
             script: |
-              if f ((Get-DbaAgentJob -SqlInstance lab-sql -Job "DatabaseBaCkup - USER_DATABASES - LOG").JobID -ne $null) {exit 100} else {exit 101}
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              if ((Get-DbaAgentJob -SqlInstance $env:ComputerName -Job "DatabaseBackup - USER_DATABASES - LOG").JobID -ne $null)
+              {
+              echo "100 code"
+              exit 100}
+              else {
+              echo "101 code"
+              exit 101}
           enforce:
             interpreter: POWERSHELL
-            script: |    
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
               $userdb = Get-DbaDatabase -SQLInstance $env:ComputerName -ExcludeSystem
               $systemdb = Get-DbaDatabase -SQLInstance $env:ComputerName -ExcludeUser
               $params = @{
-              SqlInstance = $envComputerName
-              Database = $userdb
+              SqlInstance = $env:ComputerName
+              Database = $userdb.name
               ReplaceExisting = $true
               InstallJobs = $true
               LogToTable = $true
-              BackupLocation = 'E:\Data\Backup'  
+              BackupLocation = 'E:\SQL_Backups'
               CleanupTime = 176
               Verbose = $true
               }
-              
+
               Install-DBAMaintenanceSolution @params
+
               exit 100
-      - id: config-gcs-backup
+            outputFilePath: C:\ospolicy_log.txt
+      - id: config-sql-backup-userdb
         exec:
           validate:
             interpreter: POWERSHELL
-            script: | 
-              if ((Get-DbaAgentJob -sqlinstance $env:computername -job $systemdbjob).HasSchedule -eq $true) {exit 100} else {exit 101}
-          enforce:
-            interpreter: POWERSHELL  
             script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
               $userdbjob = 'DatabaseBackup - USER_DATABASES - FULL'
-              $userlogjob = 'DatabaseBackup - USER_DATABASES - LOG'
-              $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-              
-              New-DbaAgentSchedule -SQLInstance $env:Computername `
-              -Schedule UserDBLog `
-              -FrequencyType Daily `
-              -FrequencyInterval 1 `
-              -FrequencySubDayType Minute `
-              -FrequencySubDayInterval 5 `
-              -Force 
+              if ((Get-DbaAgentJob -sqlinstance $env:computername -job $userdbjob).HasSchedule -eq $true) {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $userdbjob = 'DatabaseBackup - USER_DATABASES - FULL'
 
               New-DbaAgentSchedule -SQLInstance $env:Computername `
               -Schedule UserDBBK `
               -FrequencyType Daily `
               -Starttime "050000" `
+              -job $userdbjob `
               -Force
 
-              New-DbaAgentSchedule -SQLInstance $env:Computername `
-              -Schedule SysDBBK `
-              -FrequencyType Daily `
-              -Starttime "050000" `
-              -Force
-
-              Set-DbaAgentSchedule -SQLInstance $env:Computername -job $userdbjob -Schedule UserDBBK
-              Set-DbaAgentSchedule -SQLInstance $env:computername -job $userdblogjob -Schedule UserDBLog
-              Set-DbaAgentSchedule -SQLInstance $env:computername -job $systemdbjob -Schedule SysDBBK
-              exit 100              
-      - id: gcs-upload-configure
+              exit 100
+            outputFilePath: C:\ospolicy_log.txt
+      - id: config-sql-backup-sys
         exec:
           validate:
             interpreter: POWERSHELL
             script: |
-              if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - FULL").count -gt 1) 
-              {exit 100} else {ext 101}
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+              if ((Get-DbaAgentJob -sqlinstance $env:computername -job $systemdbjob).HasSchedule -eq $true) {echo 100} else {echo 101}
           enforce:
             interpreter: POWERSHELL
             script: |
-              $jobs = 'DatabaseBackup - USER_DATABASES - FULL','DatabaseBackup - USER_DATABASES - LOG','DatabaseBackup - SYSTEM_DATABASES - FULL'
-              New-DbaAgentJobStep -SQLInstance $env:computername -StepName "Upload to GCS" `
-              -Subsystem 'CmdExec'
-              -Command @"
-              cd E:\backups
-              gsutil cp -n . gs://lab_iso/
-              "@ `
-              -id 2 `
-              -onsuccesaction quitwithsuccess `
-              -onfailaction quitwithfailure  `
-              -job $jobs
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+
+              New-DbaAgentSchedule -SQLInstance $env:Computername `
+              -Schedule SysDBBK `
+              -FrequencyType Daily `
+              -Starttime "040000" `
+              -job $systemdbjob `
+              -Force
+
               exit 100
+            outputFilePath: C:\ospolicy_log.txt
+      - id: config-sql-backup-log
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $userlogjob = 'DatabaseBackup - USER_DATABASES - LOG'
+              if ((Get-DbaAgentJob -sqlinstance $env:computername -job $userlogjob).HasSchedule -eq $true) {echo 100} else {echo 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $userlogjob = 'DatabaseBackup - USER_DATABASES - LOG'
+
+              New-DbaAgentSchedule -SQLInstance $env:Computername `
+              -Schedule DBLOGBK `
+              -FrequencyType Daily `
+              -FrequencyInterval 1 `
+              -FrequencySubDayType Minute `
+              -FrequencySubDayInterval 5 `
+              -job $userlogjob `
+              -Force
+
+              exit 100
+            outputFilePath: C:\ospolicy_log.txt
+      - id: gcs-upload-configure-usrdb
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - FULL").count -gt 1)
+              {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              $commanddb = @"
+              Set-Location E:\SQL_Backups\LAB-SQL\AdventureWorks2016\FULL `r`n
+              gsutil cp -n -r . gs://lab_iso/sqlbackups/AdventureWorks2016/FULL/
+              "@
+
+              $userdbjob = 'DatabaseBackup - USER_DATABASES - FULL'
+
+              Set-DbaAgentJobStep -SqlInstance $env:ComputerName `
+              -Job $userdbjob `
+              -StepName $userdbjob `
+              -StepID 1 `
+              -OnSuccessAction GoToNextStep
+
+              New-DbaAgentJobStep -SQLInstance $env:computername `
+              -StepName 'Upload to GCS' `
+              -StepId 2 `
+              -Job $userdbjob `
+              -SubSystem Powershell `
+              -Command $commanddb `
+
+              }
+
+              exit 100
+            outputFilePath: C:\ospolicy_log.txt
+      - id: gcs-upload-configure-usrlog
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - LOG").count -gt 1)
+              {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+
+              $commandlog = @"
+              Set-Location E:\SQL_Backups\LAB-SQL\AdventureWorks2016\LOG `r`n
+              gsutil cp -n -r . gs://lab_iso/sqlbackups/AdventureWorks2016/LOG/
+              "@
+
+              $userlogjob = 'DatabaseBackup - USER_DATABASES - LOG'
+
+              Set-DbaAgentJobStep -SqlInstance $env:ComputerName `
+              -Job $userlogjob `
+              -StepName $userlogjob `
+              -StepID 1 `
+              -OnSuccessAction GoToNextStep
+
+              New-DbaAgentJobStep -SQLInstance $env:computername `
+              -StepName 'Upload to GCS' `
+              -StepId 2 `
+              -Job $userlogjob `
+              -SubSystem Powershell `
+              -Command $commandlog `
+              }
+
+              exit 100
+            outputFilePath: C:\ospolicy_log.txt
+      - id: gcs-upload-configure-sysdb
+        exec:
+          validate:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+              if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - SYSTEM_DATABASES - LOG").count -gt 1)
+              {exit 100} else {exit 101}
+          enforce:
+            interpreter: POWERSHELL
+            script: |
+              Start-Transcript -Path C:\Sql_log.txt -Append
+
+              $commandsys = @"
+              Set-Location E:\SQL_Backups\LAB-SQL\AdventureWorks2016\LOG `r`n
+              gsutil cp -n -r . gs://lab_iso/sqlbackups/AdventureWorks2016/LOG/
+              "@
+
+              $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+
+              Set-DbaAgentJobStep -SqlInstance $env:ComputerName `
+              -Job $systemdbob `
+              -StepName $systemdbjob `
+              -StepID 1 `
+              -OnSuccessAction GoToNextStep
+
+              New-DbaAgentJobStep -SQLInstance $env:computername `
+              -StepName 'Upload to GCS' `
+              -StepId 2 `
+              -Job $systemdbjob `
+              -SubSystem Powershell `
+              -Command $commandsys `
+              }
+
+              exit 100
+            outputFilePath: C:\ospolicy_log.txt
