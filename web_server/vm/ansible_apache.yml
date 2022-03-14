@@ -12,7 +12,7 @@
       ansible.builtin.copy:
         dest: /var/www/html/index.html
         content: |
-                   Coalfire Custom Web Page
+                   Lab Custom Web Page
     - name: httpd service enabled
       ansible.builtin.service:
         name: httpd
