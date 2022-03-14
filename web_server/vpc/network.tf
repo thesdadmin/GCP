@@ -1,6 +1,6 @@
 //Create a Router for outbound network access. 
 resource "google_compute_router" "router" {
-  name    = "coalfire-router"
+  name    = "lab-router"
   region  = module.vpc.subnets_regions[1]
   network = module.vpc.network_name
   project = data.google_project.project.project_id
@@ -12,7 +12,7 @@ resource "google_compute_router" "router" {
 
 //Creates a GCP Cloud Nat instance to allow private VMs to reach the internet. 
 resource "google_compute_router_nat" "nat" {
-  name                               = "coalfire-router-nat"
+  name                               = "lab-router-nat"
   router                             = google_compute_router.router.name
   region                             = google_compute_router.router.region
   project                            = data.google_project.project.project_id
