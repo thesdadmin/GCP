@@ -8,7 +8,7 @@ module "vpc" {
   project_id = data.google_project.project.project_id
 
   //Define a VPC network 
-  network_name = "coalfire"
+  network_name = "lab"
   routing_mode = "GLOBAL"
   mtu          = 1460
 
