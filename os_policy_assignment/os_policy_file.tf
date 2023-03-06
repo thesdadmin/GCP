@@ -1,5 +1,5 @@
 ##Upload objects
-resource "google_storage_bucket_object" "dbatools" {
+/*resource "google_storage_bucket_object" "dbatools" {
   name   = "dbatools.zip"
   source = "./dbatools.zip"
   bucket = var.gcs_media_bkt
@@ -9,6 +9,7 @@ resource "google_storage_bucket_object" "sqlmaintenancesolution" {
   source = "./sqlmaintenancesolution.zip"
   bucket = var.gcs_media_bkt
 }
+*/
 ##create policy to copy objects to OS
 resource "google_os_config_os_policy_assignment" "sql_tools" {
   ##depends_on = [module.tandem_app_svc_acc_dev]
@@ -39,7 +40,7 @@ resource "google_os_config_os_policy_assignment" "sql_tools" {
           enforce {
             ## Installs Module to Powershell System Path. 
             interpreter = "POWERSHELL"
-            script = <<EOF
+            script      = <<EOF
             gsutil cp gs://${var.gcs_media_bkt}/modules/dbatools.zip C:\modules\dbatools.zip
             mkdir "C:\Program Files\WindowsPowershell\Moduels\dbatools"
             Expand-Archive -LiteralPath 'C:\modules\dbatools.zip' -DestinationPath 'C:\Program Files\WindowsPowershell\Modules\dbatools'
@@ -54,6 +55,7 @@ resource "google_os_config_os_policy_assignment" "sql_tools" {
         file {
           state = "PRESENT"
           file {
+            allow_insecure = true
             gcs {
               bucket = var.gcs_media_bkt
               object = "modules/sqlmaintenancesolution.zip"

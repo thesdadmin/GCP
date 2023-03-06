@@ -1,4 +1,4 @@
-## Creates OS Config assignment in a Zone. Applies automation to SQL servers that have 
+## Creates OS Config assignment in a Zone. Applies automation to SQL servers that have
 ## enable OSConfig metadata tag and osconfig label
 resource "google_os_config_os_policy_assignment" "sql_backup" {
   ##depends_on = [module.tandem_app_svc_acc_dev]
@@ -10,6 +10,8 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
       }
     }
   }
+
+
   location = var.zone
   name     = var.os_sql_policy_assignment_name
   os_policies {
@@ -21,16 +23,16 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if ((Get-DbaAgentJob -SqlInstance $env:ComputerName -Job "DatabaseBackup - SYSTEM_DATABASES - FULL").JobID -ne $null)
               {exit 100}
               else
               {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $sysdb = Get-DbaDatabase -SQLInstance $env:ComputerName -Database master
               $params = @{
               SqlInstance = $env:ComputerName
@@ -45,9 +47,9 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               LocalFile = 'C:\sqlmaintenancesolution.zip'
               }
               Install-DBAMaintenanceSolution @params 6>&1 2>&1 >> C:\scriptsys.txt
-              Start-DbaAgentJob -sqlinstance $env:computername -Job "DatabaseBackup - SYSTEM_DATABASES - FULL" 
+              Start-DbaAgentJob -sqlinstance $env:computername -Job "DatabaseBackup - SYSTEM_DATABASES - FULL"
               exit 100
-              EOF
+            EOT
           }
         }
       }
@@ -56,14 +58,14 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
               if ((Get-DbaAgentJob -sqlinstance $env:computername -job $systemdbjob).HasSchedule -eq $true) {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
               New-DbaAgentSchedule -SQLInstance $env:Computername `
               -Schedule SysDBBK `
@@ -72,7 +74,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               -job $systemdbjob `
               -Force
               exit 100
-              EOF
+              EOT
           }
         }
       }
@@ -81,18 +83,18 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if ((Test-path N:\script\GCSsys.ps1) -eq $True) {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $commanddb = @"
               `$sysdbs=(Get-DbaDatabase -sqlinstance $env:computerName -Database master,model,msdb).name
               foreach (`$db in `$sysdbs) {
               Set-Location N:\$env:computername\`$db\FULL `n
-              gsutil -m cp -n -r . gs://${var.gcs_sql_bkt}/sqlbackups/$env:computername/`$db/FULL/
+              gsutil -m cp -n -r . gs://${var.gcs_sql_bkt_full}/sqlbackups/$env:computername/`$db/FULL/
               }
               "@
               if (Test-Path N:\script) {
@@ -105,23 +107,24 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               exit 100
               }
               else {exit 101}
-              EOF
+            EOT
           }
         }
       }
+
       resources {
         id = "gcs-upload-configure-sysdb"
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - SYSTEM_DATABASES - FULL").count -gt 1)
               {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $jobstep = @"
               powershell.exe -File N:\script\GCSsys.ps1 -ExecutionPolicy Bypass
               "@
@@ -138,7 +141,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               -Command $jobstep `
               -Force
               exit 100
-              EOF
+              EOT
           }
         }
       }
@@ -147,23 +150,24 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if  ((Get-DbaAgentJob -SQLInstance $env:computerName -Job "DatabaseBackup - SYSTEM_DATABASES - FULL").EventLogLevel -eq "Always")
               {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $systemdbjob = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
               Set-DbaAgentJob -SQLInstance $env:computerName -job $systemdbjob -EventLogLevel Always -Enabled
               exit 100
-              EOF
+              EOT
           }
         }
       }
     }
   }
+
   os_policies {
     id   = "cna-sql-userdb-policy"
     mode = "ENFORCEMENT"
@@ -173,16 +177,16 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if ((Get-DbaAgentJob -SqlInstance $env:ComputerName -Job "DatabaseBackup - USER_DATABASES - FULL").JobID -ne $null)
               {exit 100}
               else
               {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               import-module dbatools
               $userdb = Get-DbaDatabase -SQLInstance $env:ComputerName -ExcludeSystem | select -first 1
               $params = @{
@@ -199,7 +203,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               Install-DBAMaintenanceSolution @params 6>&1 2>&1 >> C:\scriptuser.txt
               Start-DbaAgentJob -sqlinstance $env:computername -job "DatabaseBakckup - USER_DATABASES - FULL"
               exit 100
-              EOF
+              EOT
           }
         }
       }
@@ -208,15 +212,16 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
-            if ((Get-DbaAgentJob -SqlInstance $env:COMPUTERNAME -Job "DatabaseBackup - USER_DATABASES - FULL").LastRunDate -gt (Get-Date).AddDays(-7)) {exit 100} else {exit 101}                                                      
+            script      = <<EOT
+            if ((Get-DbaAgentJob -SqlInstance $env:COMPUTERNAME -Job "DatabaseBackup - USER_DATABASES - FULL").LastRunDate -gt (Get-Date).AddDays(-7)) {exit 100} else {exit 101}
+            EOT
           }
-        enforce {
-          interpreter = "POWERSHELL"
-          script      = <<EOF
+          enforce {
+            interpreter = "POWERSHELL"
+            script      = <<EOT
             Start-DbaAgentJob -sqlinstance $env:computername -job "DatabaseBakckup - USER_DATABASES - FULL"
             exit 100
-            EOF
+            EOT
           }
         }
       }
@@ -225,14 +230,14 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userdbjob = 'DatabaseBackup - USER_DATABASES - FULL'
               if ((Get-DbaAgentJob -sqlinstance $env:computername -job $userdbjob).HasSchedule -eq $true) {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userdbjob = "DatabaseBackup - USER_DATABASES - FULL"
               New-DbaAgentSchedule -SQLInstance $env:Computername `
               -Schedule UserDBBK `
@@ -241,7 +246,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               -job $userdbjob `
               -Force
               exit 100
-              EOF
+              EOT
           }
         }
       }
@@ -250,14 +255,14 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userlogjob = 'DatabaseBackup - USER_DATABASES - DIFF'
               if ((Get-DbaAgentJob -sqlinstance $env:computername -job $userlogjob).HasSchedule -eq $true) {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userdiffjob = 'DatabaseBackup - USER_DATABASES - DIFF'
               New-DbaAgentSchedule -SQLInstance $env:Computername `
               -Schedule DBDIFFBK `
@@ -267,7 +272,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               -job $userdiffjob `
               -Force
               exit 100
-              EOF
+              EOT
           }
         }
       }
@@ -276,18 +281,18 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if ((Test-path N:\script\GCSfull.ps1) -eq $True) {exit 100} else {exit 101
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $commanddb = @"
               `$userdbs=(Get-DbaDatabase -sqlinstance $env:computerName -ExcludeSystem).name
               foreach (`$db in `$userdbs) {
               Set-Location N:\$env:computername\`$db\FULL `n
-              gsutil -m cp -n -r . gs://${var.gcs_sql_bkt}/sqlbackups/$env:computername/`$db/FULL/
+              gsutil -m cp -n -r . gs://${var.gcs_sql_bkt_full}/sqlbackups/$env:computername/`$db/FULL/
               }
               "@
               if (Test-Path N:\script) {
@@ -300,7 +305,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               exit 100
               }
               else {exit 101}
-              EOF
+              EOT
           }
         }
       }
@@ -309,14 +314,14 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - FULL").count -gt 1)
               {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $jobstep = @"
               powershell.exe -File N:\script\GCSfull.ps1 -ExecutionPolicy Bypass
               "@
@@ -333,7 +338,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               -Command $jobstep `
               -Force
               exit 100
-              EOF
+              EOT
           }
         }
       }
@@ -342,13 +347,13 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if ((Test-path N:\script\GCSdiff.ps1) -eq $True) {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $commanddb = @"
               `$userdbs=(Get-DbaDatabase -sqlinstance $env:computerName -ExcludeSystem).name
               foreach (`$db in `$userdbs) {
@@ -366,7 +371,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               exit 100
               }
               else {exit 101}
-              EOF
+              EOT
           }
         }
       }
@@ -375,14 +380,14 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if  ((Get-DbaAgentJobStep -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - DIFF").count -gt 1)
               {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userdiffjob = "DatabaseBackup - USER_DATABASES - DIFF"
               $jobstep = @"
               powershell.exe -File N:\script\GCSdiff.ps1 -ExecutionPolicy Bypass
@@ -399,7 +404,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               -Command $jobstep `
               -Force
               exit 100
-            EOF
+            EOT
           }
         }
       }
@@ -408,18 +413,18 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if  ((Get-DbaAgentJob -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - FULL").EventLogLevel -eq "Always")
               {exit 100} else {exit 101}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userdbjob = 'DatabaseBackup - USER_DATABASES - FULL'
               Set-DbaAgentJob -SQLInstance $env:computerName -job $userdbjob -EventLogLevel Always
               exit 100
-            EOF
+            EOT
           }
         }
       }
@@ -428,23 +433,24 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               if  ((Get-DbaAgentJob -SQLInstance $env:computerName -Job "DatabaseBackup - USER_DATABASES - DIFF").EventLogLevel -eq "Always")
               {exit 100} else {exit 101}
-            EOF
+            EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $userdiffjob = 'DatabaseBackup - USER_DATABASES - DIFF'
               Set-DbaAgentJob -SQLInstance $env:computerName -job $userdiffjob -EventLogLevel Always
               exit 100
-            EOF
+            EOT
           }
         }
       }
     }
   }
+
   os_policies {
     id   = "cna-sql-bk-retention-policy"
     mode = "ENFORCEMENT"
@@ -454,15 +460,15 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $job = "DatabaseBackup - USER_DATABASES - FULL"
-              $cmd=(Get-DbaAgentJobStep -SqlInstance $env:COMPUTERNAME -Job $job).properties| ? name -eq "Command" | select -ExpandProperty value -First 1  
+              $cmd=(Get-DbaAgentJobStep -SqlInstance $env:COMPUTERNAME -Job $job).properties| ? name -eq "Command" | select -ExpandProperty value -First 1
               if ($cmd -match '1080') {exit 100} else {exit 101}}
-              EOF
+              EOT
           }
           enforce {
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
               $job = "DatabaseBackup - USER_DATABASES - FULL"
               $cmd=@"
               EXECUTE [dbo].[DatabaseBackup] `n
@@ -476,16 +482,18 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
               "@
               Set-DbaAgentJobStep -SqlInstance $env:COMPUTERNAME -Job $job -StepName $job -Command $cmd
               exit 100
-              EOF
+              EOT
           }
         }
       }
     }
   }
+
   rollout {
     disruption_budget {
       percent = "50"
     }
     min_wait_duration = "3.5s"
   }
+
 }
