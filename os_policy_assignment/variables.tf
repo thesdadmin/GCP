@@ -14,7 +14,7 @@ variable "gcs_sql_bkt_diff" {
     description = "GCS Bucket for SQL DIFF Backups"
 }
 
-varialbe "os_file_policy_assignment_name" {
+variable "os_file_policy_assignment_name" {
     description = "File OS Policy Assignment"
 }
 
