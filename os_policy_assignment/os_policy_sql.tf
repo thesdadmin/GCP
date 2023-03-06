@@ -11,7 +11,7 @@ resource "google_os_config_os_policy_assignment" "sql_backup" {
     }
   }
   location = var.zone
-  name     = var.os_policy_assignment_name
+  name     = var.os_sql_policy_assignment_name
   os_policies {
     id   = "cna-sql-sys-policy"
     mode = "ENFORCEMENT"
