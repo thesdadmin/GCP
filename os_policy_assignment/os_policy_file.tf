@@ -33,19 +33,19 @@ resource "google_os_config_os_policy_assignment" "sql_tools" {
         exec {
           validate {
             interpreter = "POWERSHELL"
-            script      = <<EOF
-            If ((Get-Modules -ListAvailable DBAtools).exportedcommands.count -gt 1) {exit 100} else {echo 101}
-            EOF
+            script      = <<EOT
+            If ((Get-Module -ListAvailable DBAtools).exportedcommands.count -gt 1) {exit 100} else {exit 101}
+            EOT
           }
           enforce {
             ## Installs Module to Powershell System Path. 
             interpreter = "POWERSHELL"
-            script      = <<EOF
+            script      = <<EOT
             gsutil cp gs://${var.gcs_media_bkt}/modules/dbatools.zip C:\modules\dbatools.zip
-            mkdir "C:\Program Files\WindowsPowershell\Moduels\dbatools"
+            mkdir "C:\Program Files\WindowsPowershell\Modules\dbatools"
             Expand-Archive -LiteralPath 'C:\modules\dbatools.zip' -DestinationPath 'C:\Program Files\WindowsPowershell\Modules\dbatools'
             Get-ChildItem 'C:\Program Files\WindowsPowershell\Modules\dbatools' -recurse |Unblock-File
-            EOF
+            EOT
           }
         }
       }

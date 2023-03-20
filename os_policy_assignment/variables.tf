@@ -39,3 +39,6 @@ variable "os_sql_policy_assignment_name" {
   default     = "sql-policy-backups"
 }
 
+variable "apply_lifecycle_rule" {
+    description = "GCS lifecycle rule"
+}
