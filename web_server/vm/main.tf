@@ -17,7 +17,7 @@ resource "google_compute_instance" "rhel_web" {
   name         = "rhel-web-${random_integer.random_number.result}"
   machine_type = var.vm_size
   zone         = element(["us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"], random_integer.random_number.result % 4)
-  tags         = ["public"]
+  tags         = ["http-server","https-server"]
   labels = {
     os  = "rhel"
     web = "apache"
@@ -72,5 +72,10 @@ resource "google_compute_instance_group" "webservers" {
     port = "80"
   }
 
-  zone = "us-central1-f"
+  named_port {
+    name = "https"
+    port = "443"
+  }
+
+  zone = "us-central1-b"
 }

@@ -8,13 +8,6 @@ resource "google_compute_global_forwarding_rule" "global_forwarding_rule" {
   port_range = "80"
 }
 
-# used by one or more global forwarding rule to route incoming HTTP requests to a URL map
-resource "google_compute_target_http_proxy" "target_http_proxy" {
-  name    = "${var.app_name}-proxy"
-  project = var.app_project
-  url_map = google_compute_url_map.url_map.self_link
-}
-
 # defines a group of virtual machines that will serve traffic for load balancing
 resource "google_compute_backend_service" "backend_service" {
   name          = "${var.app_name}-backend-service"
@@ -24,8 +17,21 @@ resource "google_compute_backend_service" "backend_service" {
   health_checks = ["${google_compute_health_check.healthcheck.self_link}"]
   backend {
     group                 = google_compute_instance_group.webservers.self_link
-    balancing_mode        = "RATE"
-    max_rate_per_instance = 100
+    balancing_mode        = "UTILIZATION"
+    max_utilization     = "0.50"
+  }
+}
+
+resource "google_compute_backend_service" "backend_ssl_service" {
+  name          = "${var.app_name}-backend-ssl-service"
+  project       = var.app_project
+  port_name     = "https"
+  protocol      = "SSL"
+  health_checks = ["${google_compute_health_check.healthcheck.self_link}"]
+  backend {
+    group                 = google_compute_instance_group.webservers.self_link
+    balancing_mode        = "UTILIZATION"
+    max_utilization       = "0.50"
   }
 }
 
@@ -45,6 +51,8 @@ resource "google_compute_url_map" "url_map" {
   project         = var.app_project
   default_service = google_compute_backend_service.backend_service.self_link
 }
+
+
 # show external ip address of load balancer
 output "load-balancer-ip-address" {
   value = google_compute_global_forwarding_rule.global_forwarding_rule.ip_address

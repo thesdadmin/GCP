@@ -18,7 +18,8 @@ data "google_project" "project" {
 
 //datasource rhel image
 data "google_compute_image" "rhel_image" {
-  name    = "rhel-8-v20220126"
+  most_recent = true
+  family = "rhel-8"
   project = "rhel-cloud"
 }
 
@@ -30,6 +31,11 @@ data "google_storage_bucket" "script" {
 //datasource subnet
 data "google_compute_subnetwork" "lab03" {
   project = data.google_project.project.project_id
-  name    = "subnet-03"
+  name    = "default"
   region  = "us-central1"
+}
+
+data "google_compute_ssl_certificate" "ssl_cert" {
+  name = "auth-wild-cert"
+  project = "lab-project-359"
 }

@@ -1,4 +1,4 @@
-vm_size           = "n1-standard-2"
+vm_size           = "e2-medium"
 service_port      = 80
 service_port_name = "http"
 app_name          = "rhel-web"

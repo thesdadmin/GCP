@@ -2,7 +2,7 @@
 //This service account will allow acces to Compute and Cloud Storage resources at the project level only. 
 
 resource "google_project_iam_custom_role" "storage" {
-  role_id     = "bucket.viewer"
+  role_id     = "bucket.viewer_2"
   title       = "Custom Bucket Viewer Role"
   description = "Allows Viewer rights to Buckets"
   project     = data.google_project.project.project_id
@@ -10,7 +10,7 @@ resource "google_project_iam_custom_role" "storage" {
 }
 
 resource "google_service_account" "sa" {
-  account_id   = "lab-compute-sa"
+  account_id   = "lab-compute-sa2"
   display_name = "A service account for LAB instances"
   project      = data.google_project.project.project_id
 }

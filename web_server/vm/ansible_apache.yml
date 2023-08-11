@@ -19,6 +19,63 @@
         enabled: true
         state: started
     - name: open firewall
+Red Hat Customer Portal
+Products & Services
+Tools
+Security
+Community
+
+Search
+
+English
+
+All Red Hat
+
+
+
+
+
+Log in
+Products & ServicesProduct DocumentationRed Hat Enterprise Linux8Deploying different types of serversChapter 2. Setting up and configuring NGINX
+Expand all
+Collapse all
+Table of contents
+Deploying different types of servers
+Making open source more inclusive
+Providing feedback on Red Hat documentation
+1. Setting up the Apache HTTP web server
+Expand section "1. Setting up the Apache HTTP web server"
+2. Setting up and configuring NGINX
+Collapse section "2. Setting up and configuring NGINX"
+2.1. Installing and preparing NGINX
+2.2. Configuring NGINX as a web server that provides different content for different domains
+2.3. Adding TLS encryption to an NGINX web server
+2.4. Configuring NGINX as a reverse proxy for the HTTP traffic
+2.5. Configuring NGINX as an HTTP load balancer
+2.6. Additional resources
+3. Using Samba as a server
+Expand section "3. Using Samba as a server"
+4. Setting up and configuring a BIND DNS server
+Expand section "4. Setting up and configuring a BIND DNS server"
+5. Exporting NFS shares
+Expand section "5. Exporting NFS shares"
+6. Securing NFS
+Expand section "6. Securing NFS"
+7. Enabling pNFS SCSI layouts in NFS
+Expand section "7. Enabling pNFS SCSI layouts in NFS"
+8. Configuring the Squid caching proxy server
+Expand section "8. Configuring the Squid caching proxy server"
+9. Database servers
+Expand section "9. Database servers"
+10. Deploying and configuring a Postfix SMTP server
+Expand section "10. Deploying and configuring a Postfix SMTP server"
+11. Configuring and maintaining a Dovecot IMAP and POP3 server
+Expand section "11. Configuring and maintaining a Dovecot IMAP and POP3 server"
+12. Configuring printing
+Expand section "12. Configuring printing"
+Legal Notice
+
+Focus mode
       ansible.posix.firewalld:
         service: http
         state: enabled
