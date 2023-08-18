@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euox pipefall
+set -euox pipefail
 CLOUD_RUN_TASK_INDEX=${CLOUD_RUN_TASK_INDEX:=0}
 CLOUD_RUN_TASK_ATTEMPT=${CLOUD_RUN_TASK_ATTEMPT:=0}
 
@@ -25,7 +25,7 @@ FAIL_RATE=$(printf '%.1f' "${FAIL_RATE:=0}")
 RESULT=$(gcloud certificate-manager certificates list --filter="expireTime < P15D" --format="value(name)")
 
 project_number=$(gcloud config list --format='value(core.project)')
-RESULT=$(gcloud certificate-manager certificates list --filter="expireTime =< P15D" --format="value(name)")
+RESULT=$(gcloud certificate-manager certificates list --filter="expireTime < P15D" --format="value(name)")
 if [ $? -ne 0 ];
    then 
      echo "Certificate $RESULT needs to be removed from the target_https_proxies"    
@@ -46,7 +46,7 @@ if [ $? -ne 0 ];
         gcloud certificate-manager maps entries list --map $map --filter certificates="projects/$project_number/locations/global/certificates/$oldcertificate"
         if [ $? -eq 0 ]
             then
-            $name=$(gcloud certificate-manager maps entries list --map dns-map --filter certificates="projects/$project_number/locations/global/certificates/$oldcertificate" --format='value(name)'
+            $name=$(gcloud certificate-manager maps entries list --map dns-map --filter certificates="projects/$project_number/locations/global/certificates/$oldcertificate" --format='value(name)')
 
             echo "Add new certificate to Certificate Entry $name for Certificate Map $map"
 
