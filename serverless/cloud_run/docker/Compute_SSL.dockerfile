@@ -9,3 +9,4 @@ USER 1000:1000
 ENTRYPOINT ["/bin/bash"]
 
 CMD ["./home/cloudsdk/cert_rotation_comute.sh"]
+
